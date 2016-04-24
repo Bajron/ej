@@ -122,9 +122,10 @@ func main() {
 	var input *os.File
 	var err error
 
-	if len(os.Args) < 1 {
+	if len(os.Args) < 2 {
 		fmt.Fprintf(os.Stderr, `Usage:
-%s <pattern> [file]`, os.Args[0])
+  %s <selector> [file]
+`, os.Args[0])
 		os.Exit(1)
 	}
 
@@ -147,6 +148,8 @@ func main() {
 		fmt.Fprintf(os.Stderr, "found so far: %s\n", address.SoFar())
 		os.Exit(1)
 	}
+	// TODO make an option for this
+	fmt.Println()
 }
 
 func nextToken(d *json.Decoder, s *Stepping) (json.Token, bool) {
