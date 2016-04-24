@@ -1,0 +1,42 @@
+#!/bin/bash
+
+HERE=$(dirname $(readlink -f "${BASH_SOURCE[0]}"))
+
+APP="ej"
+
+TF="${HERE}/test.json"
+
+TSTR='{"Status":0,"Info":"OK","Type":"session info","Token":"","Data":{"Game":{"Players":[{"CardsInHand":0,"State":0,"Points":0},{"CardsInHand":0,"State":0,"Points":0},{"CardsInHand":0,"State":1,"Points":0}],"Admin":0,"StartingPlayer":2,"DealingPlayer":1,"CurrentPlayer":2,"CurrentState":0,"CardsInDeck":104,"CardsOnPile":0,"PileTop":{"Rank":-1,"Suit":-1},"PilePeek":{"Rank":-1,"Suit":-1},"FinalGroups":[{"Set":null,"Unassigned":null},{"Set":null,"Unassigned":null},{"Set":null,"Unassigned":null}],"Trumph":3},"Players":["a","b","c"]}}'
+
+function verifyOk() {
+	local selector="${1}"
+	local expected="${2}"
+	local got=`echo "${TSTR}" | "${APP}" "${selector}"`
+	if [ "${expected}" != "${got}" ] ; then
+		echo "'${expected}' != '${got}' for ${selector}"
+		return 1
+	fi
+	return 0
+}
+
+IT=0
+X=
+OK_CASES_0=('Status' '0')
+OK_CASES_1=('Info' '"OK"')
+OK_CASES_2=('Data.Game.Players[2].Points' '0')
+OK_CASES_3=('Data.Players[2]' '"c"')
+OK_CASES=4
+FAILED=0
+
+for ((IT=0;IT<${OK_CASES};IT++)) ; do 
+	X="OK_CASES_${IT}[@]"
+	verifyOk "${!X}" || ((FAILED++))
+done
+
+if [ "${FAILED}" != "0" ]; then
+	echo "[FAILED] $[OK_CASES - FAILED]/${OK_CASES}"
+else
+	echo "[SUCCESS]"
+fi
+
+

@@ -187,6 +187,7 @@ func navigate(d *json.Decoder, s *Stepping) {
 					navigate(d, s)
 					return
 				}
+				skipObject(d, s)
 			}
 			s.err = stepError{"Requested index not found"}
 			return
