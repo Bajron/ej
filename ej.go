@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"os"
 	"strconv"
 	"strings"
@@ -150,26 +149,28 @@ func main() {
 	}
 }
 
-func isOk(err error) bool {
-	if err == io.EOF {
-		return false
+func nextToken(d *json.Decoder, s *Stepping) (json.Token, bool) {
+	if s.err != nil {
+		return json.Token(nil), false
 	}
+
+	t, err := d.Token()
+
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: %s", err)
-		return false
+		s.err = err
+		return t, false
 	}
-	return true
+	return t, true
 }
 
 func navigate(d *json.Decoder, s *Stepping) {
 	if !s.More() {
-		printObject(d)
+		printObject(d, s)
 		return
 	}
 
-	t, err := d.Token()
-	if !isOk(err) {
-		s.err = err
+	t, ok := nextToken(d, s)
+	if !ok {
 		return
 	}
 
@@ -212,21 +213,21 @@ func navigate(d *json.Decoder, s *Stepping) {
 
 func navigateKeyValue(d *json.Decoder, s *Stepping) bool {
 	// key
-	t, err := d.Token()
-	if !isOk(err) {
+	t, ok := nextToken(d, s)
+	if !ok {
 		return false
 	}
 	if fmt.Sprint(t) == s.Current().name {
 		return true
 	}
 	// value
-	skipObject(d)
+	skipObject(d, s)
 	return false
 }
 
-func skipObject(d *json.Decoder) {
-	t, err := d.Token()
-	if !isOk(err) {
+func skipObject(d *json.Decoder, s *Stepping) {
+	t, ok := nextToken(d, s)
+	if !ok {
 		return
 	}
 
@@ -234,23 +235,23 @@ func skipObject(d *json.Decoder) {
 	case json.Delim:
 		if i == '[' {
 			for d.More() {
-				skipObject(d)
+				skipObject(d, s)
 			}
-			skipObject(d)
+			skipObject(d, s)
 		} else if i == '{' {
 			for d.More() {
-				skipObject(d)
-				skipObject(d)
+				skipObject(d, s)
+				skipObject(d, s)
 			}
-			skipObject(d)
+			skipObject(d, s)
 		}
 	default:
 	}
 }
 
-func printObject(d *json.Decoder) {
-	t, err := d.Token()
-	if !isOk(err) {
+func printObject(d *json.Decoder, s *Stepping) {
+	t, ok := nextToken(d, s)
+	if !ok {
 		return
 	}
 
@@ -259,22 +260,22 @@ func printObject(d *json.Decoder) {
 		fmt.Print(i)
 		if i == '[' {
 			if d.More() {
-				printObject(d)
+				printObject(d, s)
 			}
 			for d.More() {
 				fmt.Print(",")
-				printObject(d)
+				printObject(d, s)
 			}
-			printObject(d)
+			printObject(d, s)
 		} else if i == '{' {
 			if d.More() {
-				printKeyValue(d)
+				printKeyValue(d, s)
 			}
 			for d.More() {
 				fmt.Print(", ")
-				printKeyValue(d)
+				printKeyValue(d, s)
 			}
-			printObject(d)
+			printObject(d, s)
 		}
 	case string:
 		fmt.Printf("\"%s\"", i)
@@ -283,8 +284,8 @@ func printObject(d *json.Decoder) {
 	}
 }
 
-func printKeyValue(d *json.Decoder) {
-	printObject(d)
+func printKeyValue(d *json.Decoder, s *Stepping) {
+	printObject(d, s)
 	fmt.Print(": ")
-	printObject(d)
+	printObject(d, s)
 }
