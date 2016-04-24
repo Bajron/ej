@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -35,16 +36,27 @@ func GetSteps(str string) Steps {
 	}
 	// it's what's left, although it's on the rhs ;)
 	left := str
-	var dot int
+	var dot, bracket int
 	for {
 		dot = strings.Index(left, ".")
-		if dot == -1 {
+		bracket = strings.Index(left, "[")
+		if dot == -1 && bracket == -1 {
 			break
 		}
-		s = append(s, Key(left[0:dot]))
-		left = left[dot+1:]
+		if dot != -1 && dot < bracket || bracket == -1 {
+			s = append(s, Key(left[0:dot]))
+			left = left[dot+1:]
+		} else {
+			closed := strings.Index(left, "]")
+			num, _ := strconv.Atoi(left[bracket+1 : closed])
+			s = append(s, Index(num))
+			left = left[closed+1:]
+		}
 	}
-	s = append(s, Key(left))
+
+	if len(left) > 0 {
+		s = append(s, Key(left))
+	}
 
 	return s
 }

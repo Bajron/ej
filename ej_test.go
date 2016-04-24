@@ -12,7 +12,7 @@ func TestGetSteps(t *testing.T) {
 
 	r = GetSteps("key")
 	if len(r) != 1 {
-		t.Error("Single key should return one step")
+		t.Errorf("Single key should return one step. Got %d", len(r))
 	}
 
 	r = GetSteps("key1.key2")
@@ -22,5 +22,13 @@ func TestGetSteps(t *testing.T) {
 	r = GetSteps("key1.key2.key3")
 	if len(r) != 3 {
 		t.Error("Double field reference should return 3 steps")
+	}
+
+	r = GetSteps("[0]")
+	if len(r) != 1 {
+		t.Errorf("Single index should return one step. Got %d", len(r))
+	}
+	if r[0].kind != INDEX {
+		t.Error("Index step should be marked as such")
 	}
 }
