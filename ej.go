@@ -29,6 +29,31 @@ func Index(i int) Step {
 
 type Steps []Step
 
+type Stepping struct {
+	current int
+	steps   Steps
+}
+
+func NewStepping(str string) *Stepping {
+	return &Stepping{
+		0,
+		GetSteps(str),
+	}
+}
+
+// Do we still need to go deeper
+func (s *Stepping) More() bool {
+	return s.current < len(s.steps)
+}
+
+func (s *Stepping) StepIn() {
+	s.current++
+}
+
+func (s *Stepping) Current() *Step {
+	return &s.steps[s.current]
+}
+
 func GetSteps(str string) Steps {
 	s := make(Steps, 0, 16)
 	if len(str) == 0 {
@@ -86,19 +111,145 @@ func main() {
 		input = os.Stdin
 	}
 
+	addr := NewStepping(os.Args[1])
 	dec := json.NewDecoder(input)
-	for {
-		t, err := dec.Token()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "error: %s", err)
-		}
-		fmt.Printf("%T: %v", t, t)
-		if dec.More() {
-			fmt.Printf(" (more)")
-		}
-		fmt.Printf("\n")
+	navigate(dec, addr)
+}
+
+func isOk(err error) bool {
+	if err == io.EOF {
+		return false
 	}
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error: %s", err)
+		return false
+	}
+	return true
+}
+
+func navigate(d *json.Decoder, s *Stepping) {
+	if !s.More() {
+		printObject(d)
+		return
+	}
+
+	t, err := d.Token()
+	if !isOk(err) {
+		// TODO mark error in stepping
+		return
+	}
+
+	switch i := t.(type) {
+	case json.Delim:
+		if i == '[' {
+			if s.Current().kind != INDEX {
+				// ERROR
+				return
+			}
+			for idx := 0; d.More(); idx++ {
+				if idx == s.Current().index {
+					s.StepIn()
+					navigate(d, s)
+					return
+				}
+			}
+			// ERROR
+			return
+		}
+		if i == '{' {
+			if s.Current().kind != KEY {
+				// ERROR
+				return
+			}
+			for d.More() {
+				if navigateKeyValue(d, s) {
+					s.StepIn()
+					navigate(d, s)
+					return
+				}
+			}
+			// ERROR
+			return
+		}
+	default:
+	}
+}
+
+func navigateKeyValue(d *json.Decoder, s *Stepping) bool {
+	// key
+	t, err := d.Token()
+	if !isOk(err) {
+		return false
+	}
+	if fmt.Sprint(t) == s.Current().name {
+		return true
+	}
+	// value
+	skipObject(d)
+	return false
+}
+
+func skipObject(d *json.Decoder) {
+	t, err := d.Token()
+	if !isOk(err) {
+		return
+	}
+
+	switch i := t.(type) {
+	case json.Delim:
+		if i == '[' {
+			for d.More() {
+				skipObject(d)
+			}
+			skipObject(d)
+		} else if i == '{' {
+			for d.More() {
+				skipObject(d)
+				skipObject(d)
+			}
+			skipObject(d)
+		}
+	default:
+	}
+}
+
+func printObject(d *json.Decoder) {
+	t, err := d.Token()
+	if !isOk(err) {
+		return
+	}
+
+	switch i := t.(type) {
+	case json.Delim:
+		fmt.Print(i)
+		if i == '[' {
+			if d.More() {
+				printObject(d)
+			}
+			for d.More() {
+				fmt.Print(",")
+				printObject(d)
+			}
+			printObject(d)
+		} else if i == '{' {
+			if d.More() {
+				printKeyValue(d)
+			}
+			for d.More() {
+				fmt.Print(", ")
+				printKeyValue(d)
+			}
+			printObject(d)
+		}
+	case string:
+		fmt.Printf("\"%s\"", i)
+	default:
+		fmt.Print(t)
+	}
+}
+
+func printKeyValue(d *json.Decoder) {
+	printObject(d)
+	fmt.Print(": ")
+	printObject(d)
 }
