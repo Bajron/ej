@@ -273,7 +273,7 @@ func printObject(d *json.Decoder, s *Stepping) {
 				printKeyValue(d, s)
 			}
 			for d.More() {
-				fmt.Print(", ")
+				fmt.Print(",")
 				printKeyValue(d, s)
 			}
 			printObject(d, s)
@@ -287,6 +287,6 @@ func printObject(d *json.Decoder, s *Stepping) {
 
 func printKeyValue(d *json.Decoder, s *Stepping) {
 	printObject(d, s)
-	fmt.Print(": ")
+	fmt.Print(":")
 	printObject(d, s)
 }

@@ -24,8 +24,9 @@ X=
 OK_CASES_0=('Status' '0')
 OK_CASES_1=('Info' '"OK"')
 OK_CASES_2=('Data.Game.Players[2].Points' '0')
-OK_CASES_3=('Data.Players[2]' '"c"')
-OK_CASES=4
+OK_CASES_3=('Data.Game.Players[0]' '{"CardsInHand":0,"State":0,"Points":0}')
+OK_CASES_4=('Data.Players[2]' '"c"')
+OK_CASES=5
 FAILED=0
 
 for ((IT=0;IT<${OK_CASES};IT++)) ; do 
