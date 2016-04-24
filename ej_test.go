@@ -14,6 +14,12 @@ func TestGetSteps(t *testing.T) {
 	if len(r) != 1 {
 		t.Errorf("Single key should return one step. Got %d", len(r))
 	}
+	if r[0].kind != KEY {
+		t.Error("Key should have proper kind")
+	}
+	if r[0].name != "key" {
+		t.Errorf("Key should have name as provided. Got %s", r[0].name)
+	}
 
 	r = GetSteps("key1.key2")
 	if len(r) != 2 {
@@ -22,6 +28,9 @@ func TestGetSteps(t *testing.T) {
 	r = GetSteps("key1.key2.key3")
 	if len(r) != 3 {
 		t.Error("Double field reference should return 3 steps")
+	}
+	if r[1].name != "key2" {
+		t.Errorf("expected key2, got %s", r[1].name)
 	}
 
 	r = GetSteps("[0]")
@@ -40,5 +49,8 @@ func TestGetSteps(t *testing.T) {
 	r = GetSteps("key[2]")
 	if l := len(r); l != 2 {
 		t.Errorf("Index from key should return 2 steps. Got %d", l)
+	}
+	if r[1].index != 2 {
+		t.Errorf("Index should have value provided. Got %d", r[1].index)
 	}
 }
