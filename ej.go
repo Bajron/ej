@@ -278,6 +278,8 @@ func printObject(d *json.Decoder, s *Stepping) {
 			}
 			printObject(d, s)
 		}
+	case nil:
+		fmt.Print("null")
 	case string:
 		fmt.Printf("\"%s\"", i)
 	default:

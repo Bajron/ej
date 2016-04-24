@@ -3,9 +3,9 @@
 HERE=$(dirname $(readlink -f "${BASH_SOURCE[0]}"))
 
 APP="ej"
+DO_INSTALL=1
 
 TF="${HERE}/test.json"
-
 TSTR='{"Status":0,"Info":"OK","Type":"session info","Token":"","Data":{"Game":{"Players":[{"CardsInHand":0,"State":0,"Points":0},{"CardsInHand":0,"State":0,"Points":0},{"CardsInHand":0,"State":1,"Points":0}],"Admin":0,"StartingPlayer":2,"DealingPlayer":1,"CurrentPlayer":2,"CurrentState":0,"CardsInDeck":104,"CardsOnPile":0,"PileTop":{"Rank":-1,"Suit":-1},"PilePeek":{"Rank":-1,"Suit":-1},"FinalGroups":[{"Set":null,"Unassigned":null},{"Set":null,"Unassigned":null},{"Set":null,"Unassigned":null}],"Trumph":3},"Players":["a","b","c"]}}'
 
 function verifyOk() {
@@ -19,6 +19,11 @@ function verifyOk() {
 	return 0
 }
 
+if [ "${DO_INSTALL}" == "1" ]; then
+	echo "Installing ej package"
+	go install github.com/Bajron/ej
+fi
+
 IT=0
 X=
 OK_CASES_0=('Status' '0')
@@ -26,8 +31,11 @@ OK_CASES_1=('Info' '"OK"')
 OK_CASES_2=('Data.Game.Players[2].Points' '0')
 OK_CASES_3=('Data.Game.Players[0]' '{"CardsInHand":0,"State":0,"Points":0}')
 OK_CASES_4=('Data.Players[2]' '"c"')
+OK_CASES_4=('Data.Game.FinalGroups[0].Set' 'null')
 OK_CASES=5
 FAILED=0
+
+echo "Running ${OK_CASES} tests."
 
 for ((IT=0;IT<${OK_CASES};IT++)) ; do 
 	X="OK_CASES_${IT}[@]"
@@ -36,8 +44,10 @@ done
 
 if [ "${FAILED}" != "0" ]; then
 	echo "[FAILED] $[OK_CASES - FAILED]/${OK_CASES}"
+	exit 1
 else
 	echo "[SUCCESS]"
+	exit 0
 fi
 
 
