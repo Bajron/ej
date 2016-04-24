@@ -24,7 +24,15 @@ func Key(name string) Step {
 	return Step{KEY, name, -1}
 }
 func Index(i int) Step {
-	return Step{INDEX, "", i}
+	return Step{INDEX, fmt.Sprintf("[%d]", i), i}
+}
+
+type stepError struct {
+	info string
+}
+
+func (se stepError) Error() string {
+	return se.info
 }
 
 type Steps []Step
@@ -32,12 +40,14 @@ type Steps []Step
 type Stepping struct {
 	current int
 	steps   Steps
+	err     error
 }
 
 func NewStepping(str string) *Stepping {
 	return &Stepping{
 		0,
 		GetSteps(str),
+		nil,
 	}
 }
 
@@ -52,6 +62,24 @@ func (s *Stepping) StepIn() {
 
 func (s *Stepping) Current() *Step {
 	return &s.steps[s.current]
+}
+
+func (s *Stepping) SoFar() Steps {
+	return s.steps[:s.current]
+}
+
+func (s Steps) String() string {
+	r := ""
+	if len(s) > 0 {
+		r = s[0].name
+	}
+	for i := 1; i < len(s); i++ {
+		if s[i].kind == KEY {
+			r += "."
+		}
+		r += s[i].name
+	}
+	return r
 }
 
 func GetSteps(str string) Steps {
@@ -111,9 +139,15 @@ func main() {
 		input = os.Stdin
 	}
 
-	addr := NewStepping(os.Args[1])
-	dec := json.NewDecoder(input)
-	navigate(dec, addr)
+	address := NewStepping(os.Args[1])
+	decoder := json.NewDecoder(input)
+	navigate(decoder, address)
+
+	if address.err != nil {
+		fmt.Fprintf(os.Stderr, "error: %s\n", address.err)
+		fmt.Fprintf(os.Stderr, "found so far: %s\n", address.SoFar())
+		os.Exit(1)
+	}
 }
 
 func isOk(err error) bool {
@@ -135,7 +169,7 @@ func navigate(d *json.Decoder, s *Stepping) {
 
 	t, err := d.Token()
 	if !isOk(err) {
-		// TODO mark error in stepping
+		s.err = err
 		return
 	}
 
@@ -143,7 +177,7 @@ func navigate(d *json.Decoder, s *Stepping) {
 	case json.Delim:
 		if i == '[' {
 			if s.Current().kind != INDEX {
-				// ERROR
+				s.err = stepError{"Met array, when not expected"}
 				return
 			}
 			for idx := 0; d.More(); idx++ {
@@ -153,12 +187,12 @@ func navigate(d *json.Decoder, s *Stepping) {
 					return
 				}
 			}
-			// ERROR
+			s.err = stepError{"Requested index not found"}
 			return
 		}
 		if i == '{' {
 			if s.Current().kind != KEY {
-				// ERROR
+				s.err = stepError{"Met object, when not expected"}
 				return
 			}
 			for d.More() {
@@ -168,10 +202,11 @@ func navigate(d *json.Decoder, s *Stepping) {
 					return
 				}
 			}
-			// ERROR
+			s.err = stepError{"Requested key not found"}
 			return
 		}
 	default:
+		s.err = stepError{"Cannot look deeper"}
 	}
 }
 

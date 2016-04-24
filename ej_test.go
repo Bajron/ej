@@ -4,13 +4,21 @@ import (
 	"testing"
 )
 
+func testString(t *testing.T, s Steps, str string) {
+	if s.String() != str {
+		t.Errorf("String() failed for (%s!=%s)", s.String(), str)
+	}
+}
+
 func TestGetSteps(t *testing.T) {
 	r := GetSteps("")
 	if len(r) != 0 {
 		t.Error("GetSteps from empty string should be empty")
 	}
+	testString(t, r, "")
 
 	r = GetSteps("key")
+	testString(t, r, "key")
 	if len(r) != 1 {
 		t.Errorf("Single key should return one step. Got %d", len(r))
 	}
@@ -22,6 +30,7 @@ func TestGetSteps(t *testing.T) {
 	}
 
 	r = GetSteps("key1.key2")
+	testString(t, r, "key1.key2")
 	if len(r) != 2 {
 		t.Error("Single field reference should return 2 steps")
 	}
@@ -34,6 +43,7 @@ func TestGetSteps(t *testing.T) {
 	}
 
 	r = GetSteps("[0]")
+	testString(t, r, "[0]")
 	if len(r) != 1 {
 		t.Errorf("Single index should return one step. Got %d", len(r))
 	}
@@ -42,11 +52,13 @@ func TestGetSteps(t *testing.T) {
 	}
 
 	r = GetSteps("[0].key")
+	testString(t, r, "[0].key")
 	if l := len(r); l != 2 {
 		t.Errorf("Key from index should return 2 steps. Got %d", l)
 	}
 
 	r = GetSteps("key[2]")
+	testString(t, r, "key[2]")
 	if l := len(r); l != 2 {
 		t.Errorf("Index from key should return 2 steps. Got %d", l)
 	}
