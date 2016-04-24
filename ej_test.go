@@ -31,4 +31,14 @@ func TestGetSteps(t *testing.T) {
 	if r[0].kind != INDEX {
 		t.Error("Index step should be marked as such")
 	}
+
+	r = GetSteps("[0].key")
+	if l := len(r); l != 2 {
+		t.Errorf("Key from index should return 2 steps. Got %d", l)
+	}
+
+	r = GetSteps("key[2]")
+	if l := len(r); l != 2 {
+		t.Errorf("Index from key should return 2 steps. Got %d", l)
+	}
 }

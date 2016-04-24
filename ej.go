@@ -44,9 +44,14 @@ func GetSteps(str string) Steps {
 			break
 		}
 		if dot != -1 && dot < bracket || bracket == -1 {
-			s = append(s, Key(left[0:dot]))
+			if dot != 0 {
+				s = append(s, Key(left[0:dot]))
+			}
 			left = left[dot+1:]
 		} else {
+			if bracket != 0 {
+				s = append(s, Key(left[0:bracket]))
+			}
 			closed := strings.Index(left, "]")
 			num, _ := strconv.Atoi(left[bracket+1 : closed])
 			s = append(s, Index(num))
