@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 )
 
 const (
@@ -29,6 +30,22 @@ type Steps []Step
 
 func GetSteps(str string) Steps {
 	s := make(Steps, 0, 16)
+	if len(str) == 0 {
+		return s
+	}
+	// it's what's left, although it's on the rhs ;)
+	left := str
+	var dot int
+	for {
+		dot = strings.Index(left, ".")
+		if dot == -1 {
+			break
+		}
+		s = append(s, Key(left[0:dot]))
+		left = left[dot+1:]
+	}
+	s = append(s, Key(left))
+
 	return s
 }
 
